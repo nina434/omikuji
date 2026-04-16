@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>御神籤</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600&family=Zen+Old+Mincho&display=swap" rel="stylesheet">
+<style>
+:root {
+  /* 莫蘭迪配色 */
+  --bg: #e8e3dc;
+  --paper: #f5f1eb;
+  --ink: #4a4a4a;
+  --accent: #a89f91;
+  --rope: #b07d62;
+
+  --daikichi: #c9a9a6;
+  --chukichi: #d8c3a5;
+  --shokichi: #a3b7a0;
+  --kyo: #9aa3a8;
+}
+
+body {
+  margin: 0;
+  font-family: 'Zen Old Mincho', 'Noto Serif TC', serif;
+  background: var(--bg);
+  background-image: url('https://www.transparenttextures.com/patterns/rice-paper.png');
+  color: var(--ink);
+
+  display: flex;
+  justify-content: center;
+  align-items: center; /* 垂直居中 */
+  height: 100vh;       /* 撑满屏幕 */
+  text-align: center;  /* 文本居中 */
+}
+
+.container {
+  padding: 50px 20px;
+  max-width: 420px;
+}
+
+.title {
+  font-size: 36px;
+  letter-spacing: 4px;
+  margin-bottom: 30px;
+}
+
+.select {
+  margin-bottom: 20px;
+}
+
+select {
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid #ddd;
+  background: var(--paper);
+  font-family: inherit;
+}
+
+/* 御神籤紙設計 */
+.card {
+  position: relative;
+  width: 260px;
+  margin: 30px auto;
+  padding: 30px 20px;
+  background: var(--paper);
+  border-radius: 6px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+
+  opacity: 0;
+  transform: translateY(-100px);
+}
+
+/* 掉落動畫 */
+.card.show {
+  animation: drop 0.8s ease forwards;
+}
+
+@keyframes drop {
+  0% {
+    opacity: 0;
+    transform: translateY(-140px);
+  }
+  60% {
+    opacity: 1;
+    transform: translateY(12px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 6px;
+  height: 24px;
+  background: var(--rope);
+  border-radius: 3px;
+}
+
+.card h2 {
+  margin: 0;
+  font-size: 28px;
+  letter-spacing: 2px;
+}
+
+.quote {
+  margin-top: 15px;
+  font-size: 14px;
+  line-height: 1.6;
+  opacity: 0.85;
+}
+
+/* 籤運顏色（柔和） */
+.daikichi { border-top: 6px solid var(--daikichi); }
+.chukichi { border-top: 6px solid var(--chukichi); }
+.shokichi { border-top: 6px solid var(--shokichi); }
+.kyo { border-top: 6px solid var(--kyo); }
+
+button {
+  margin-top: 25px;
+  padding: 12px 28px;
+  border: none;
+  border-radius: 30px;
+  background: var(--accent);
+  color: white;
+  font-size: 15px;
+  letter-spacing: 2px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+button:hover {
+  opacity: 0.85;
+}
+
+.hint {
+  margin-top: 20px;
+  font-size: 12px;
+  opacity: 0.6;
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="title">御神籤</div>
+
+  <div class="select">
+    <select id="category">
+      <option value="literature">文學</option>
+      <option value="philosophy">哲學</option>
+      <option value="healing">治癒</option>
+    </select>
+  </div>
+
+  <div id="card" class="card">
+    輕搖手機或點擊抽籤
+  </div>
+
+  <button onclick="drawLot()">抽籤</button>
+
+  <div class="hint">（可使用搖一搖）</div>
+</div>
+
+<audio id="sound" preload="auto">
+  <source src="https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3" type="audio/mpeg">
+</audio>
+
+<script>
+const quotes = {
+  literature: [
+    "生而為人，我很抱歉。——太宰治",
+    "人間失格，不過如此。——太宰治",
+    "所有失去的，終將以另一種方式歸來。"
+  ],
+  philosophy: [
+    "我思故我在。——笛卡兒",
+    "存在即合理。——黑格爾",
+    "未經審視的人生不值得過。——蘇格拉底"
+  ],
+  healing: [
+    "慢一點，也沒有關係。",
+    "今天也請好好吃飯。",
+    "風會記得來時的路。"
+  ]
+};
+
+function getFortune() {
+  const rand = Math.random();
+  if (rand < 0.25) return {text:"大吉", class:"daikichi"};
+  if (rand < 0.5) return {text:"中吉", class:"chukichi"};
+  if (rand < 0.75) return {text:"小吉", class:"shokichi"};
+  return {text:"凶", class:"kyo"};
+}
+
+function drawLot() {
+  const category = document.getElementById("category").value;
+  const list = quotes[category];
+  const quote = list[Math.floor(Math.random()*list.length)];
+  const fortune = getFortune();
+
+  const card = document.getElementById("card");
+
+  // 重置动画
+  card.className = "card " + fortune.class;
+  card.innerHTML = `<h2>${fortune.text}</h2><div class='quote'>${quote}</div>`;
+
+  // 强制重绘，再加动画
+  void card.offsetWidth;
+  card.classList.add("show");
+
+  const sound = document.getElementById("sound");
+  sound.currentTime = 0;
+  sound.play().catch(() => {
+    console.log("音频播放被浏览器拦截");
+  });
+}
+
+let lastTime = 0;
+window.addEventListener("devicemotion", function(event) {
+  const acc = event.accelerationIncludingGravity;
+  const current = new Date().getTime();
+
+  if ((current - lastTime) > 1000) {
+    const speed = Math.abs(acc.x + acc.y + acc.z);
+    if (speed > 25) {
+      drawLot();
+      lastTime = current;
+    }
+  }
+});
+</script>
+</body>
+</html>
