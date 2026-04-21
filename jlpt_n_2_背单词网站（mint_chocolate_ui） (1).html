@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JLPT N2 学习App</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
+<style>
+body {
+  margin: 0;
+  font-family: 'Noto Sans JP', sans-serif;
+  background: linear-gradient(180deg, #d8f3dc, #b7e4c7);
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.app {
+  width: 360px;
+  height: 640px;
+  background: #3e2723;
+  border-radius: 30px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+}
+
+.header {
+  padding: 16px;
+  text-align: center;
+  font-weight: bold;
+  background: #95d5b2; /* 薄荷绿 */
+  color: #1b4332; /* 深色文字更清晰 */
+  letter-spacing: 1px;
+}
+
+.content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  transition: all 0.3s ease;
+}
+
+.word {
+  font-size: 30px;
+  margin-bottom: 10px;
+  transition: all 0.3s ease;
+  color: #95d5b2; /* 薄荷绿 */
+}
+
+.reading {
+  font-size: 18px;
+  opacity: 0.8;
+  margin-bottom: 20px;
+  color: #b7e4c7; /* 浅薄荷绿 */
+}
+
+.controls {
+  padding: 10px 15px;
+}
+
+.tabbar {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  padding: 10px 0;
+  background: rgba(255,255,255,0.1);
+  backdrop-filter: blur(10px);
+  border-top: 1px solid rgba(255,255,255,0.2);
+}
+
+.tab {
+  flex: 1;
+  text-align: center;
+  color: #b7e4c7;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.tab.active {
+  color: #95d5b2;
+  font-weight: bold;
+}
+
+.mode-switch {
+  display: flex;
+  background: rgba(255,255,255,0.1);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.mode-btn {
+  flex: 1;
+  padding: 10px;
+  border: none;
+  background: transparent;
+  color: #fff;
+  cursor: pointer;
+}
+
+.mode-btn.active {
+  background: #95d5b2;
+  color: #1b4332;
+}
+
+.play-btn {
+  margin-top: 15px;
+  width: 100%;
+  padding: 14px;
+  border: none;
+  border-radius: 12px;
+  background: #95d5b2; /* 薄荷绿 */
+  color: #1b4332; /* 深色文字 */
+  font-weight: bold;
+  font-size: 16px;
+  cursor: pointer;
+  transition: transform 0.1s ease;
+}
+
+.play-btn:active {
+  transform: scale(0.95);
+}
+
+.fade {
+  animation: fade 0.4s ease;
+}
+
+@keyframes fade {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="header">JLPT N2 Trainer</div>
+
+  <div class="content" id="content">
+    <div class="word" id="word">読み込み中...</div>
+    <div class="reading" id="reading"></div>
+  </div>
+
+  <div class="controls">
+    <div class="mode-switch">
+      <button class="mode-btn active" id="wordBtn" onclick="switchMode('word')">单词</button>
+      <button class="mode-btn" id="sentenceBtn" onclick="switchMode('sentence')">句子</button>
+    </div>
+
+    <button class="play-btn" onclick="togglePlay()" id="playBtn">▶ 播放</button>
+  </div>
+</div>
+
+<script>
+const words = [
+  { word: "経済", reading: "けいざい" },
+  { word: "改善", reading: "かいぜん" },
+  { word: "影響", reading: "えいきょう" },
+  { word: "状況", reading: "じょうきょう" },
+  { word: "環境", reading: "かんきょう" }
+];
+
+const sentences = [
+  "この問題について、よく考えてください。",
+  "会議は三時から始まります。",
+  "彼は昨日会社を休みました。"
+];
+
+let index = 0;
+let playing = false;
+let timer = null;
+let mode = 'word';
+
+function speak(text) {
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = "ja-JP";
+  speechSynthesis.speak(u);
+}
+
+function show() {
+  const content = document.getElementById("content");
+  content.classList.remove("fade");
+  void content.offsetWidth;
+  content.classList.add("fade");
+
+  if (mode === 'word') {
+    const current = words[index % words.length];
+    word.innerText = current.word;
+    reading.innerText = current.reading;
+    speak(current.reading);
+  } else {
+    const current = sentences[index % sentences.length];
+    word.innerText = current;
+    reading.innerText = "";
+    speak(current);
+  }
+}
+
+function next() {
+  index++;
+  show();
+}
+
+function togglePlay() {
+  playing = !playing;
+  playBtn.innerText = playing ? "⏸ 暂停" : "▶ 播放";
+
+  if (playing) {
+    show();
+    timer = setInterval(next, 2500);
+  } else {
+    clearInterval(timer);
+  }
+}
+
+function switchMode(newMode) {
+  mode = newMode;
+  index = 0;
+
+  wordBtn.classList.remove("active");
+  sentenceBtn.classList.remove("active");
+
+  if (mode === 'word') wordBtn.classList.add("active");
+  else sentenceBtn.classList.add("active");
+
+  show();
+}
+</script>
+
+</body>
+</html>
